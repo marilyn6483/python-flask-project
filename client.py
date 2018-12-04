@@ -1,49 +1,121 @@
 import socket
+import ssl
 
-host = "g.cn"
-port = 80
 
-# AF_INET:实现ipv4协议;SOCK_STREAM:TCP协议
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def parsed_url(url):
+    '''
+    url 是字符串, 可能的值如下
+    'g.cn'
+    'g.cn/'
+    'g.cn:3000'
+    'g.cn:3000/search'
+    'http://g.cn'
+    'https://g.cn'
+    'http://g.cn/'
+    返回一个 tuple, 内容如下 (protocol, host, port, path)
+    '''
+    protocol = 'http'
+    if url[:7] == 'http://':
+        u = url.split("://")[1]
+    elif url[:8] == 'https://':
+        protocol = 'https'
+        u = url.split("://")[1]
+    else:
+        u = url
+    index = u.find('/')
+    print(u.split('/'))
+    if index == -1:
+        host = u
+        path = '/'
+    else:
+        host = u.split('/')[0]
+        path = u.split('/')[1]
+        print(host, path)
 
-# 如果要实现https的话，使用ssl
-# import ssl
-# s = ssl.wrap_socket(s)
+    port_dict = {
+        'http': 80,
+        'https': 443,
+    }
+    port = port_dict[protocol]
 
-# 连接主机
-s.connect((host, port))
+    if ':' in host:
+        host = host[:index]
+        port = int(host[index:])
 
-# 获取本机ip和port
-ip, local_port = s.getsockname()
-print("本机IP和端口：", ip, local_port)
+    return protocol, host, port, path
 
-# 构造一个HTTP请求
-http_request= "Get /HTTP/1.1\r\n\r\nhost:{}\r\n\r\n".format(ip)
 
-# 转换成bytes之后传输出去
-request = http_request.encode("utf-8")
-s.send(request)
+def socket_by_protocol(protocol):
+    s = socket.socket()
+    if protocol == 'http':
+        return s
+    if protocol == 'https':
+        return ssl.wrap_socket(s)
 
-# 接受数据
-response = s.recv(1023)
-response = response.decode("utf-8")
 
-# print("response:", response)
+def response_by_socket(s):
+        # connection, address = s.accept()
+        # s.listen(5)
+    buffer_size = 1024
+    r = b''
+    while 1:
+        res = s.recv(buffer_size)
+        r += res
+        if len(res) < buffer_size:
+            break
 
-# 解析响应
-# print(response.split("\r\n\r\n")[0])
-# 获取响应headers和body
-headers = response.split("\r\n\r\n")[0]
-body = response.split("\r\n\r\n")[-1]
+    return r
 
-# print(headers)
-eles = headers.split("\r\n")
-status_code = eles[0].split(" ")[1]
-print(status_code)
-header_dict = {}
-print(eles)
-for ele in eles[1:]:
-    print(ele.split(":")[0])
-    header_dict[ele.split(":")[0]] = ele.split(":")[1]
-print(header_dict)
-# {'Content-Type': ' text/html; charset=UTF-8', 'Referrer-Policy': ' no-referrer', 'Content-Length': ' 1555', 'Date': ' Mon, 03 Dec 2018 10'}
+
+def parsed_response(response):
+    print(response)
+    headers = response.split("\r\n\r\n")[0]
+    body = response.split("\r\n\r\n")[1]
+
+    # print(headers)
+    eles = headers.split("\r\n")
+    status_code = eles[0].split(" ")[1]
+    # print(status_code)
+    header_dict = {}
+    # print(eles)
+    for line in eles[1:]:
+        k, v = line.split(": ")
+        header_dict[k] = v
+    return status_code, header_dict, body
+
+
+def get(url):
+    '''
+    本函数使用上课代码 client.py 中的方式使用 socket 连接服务器
+    获取服务器返回的数据并返回
+    注意, 返回的数据类型为 bytes
+    '''
+    protocol, host, port, path = parsed_url(url)
+    # print(parsed_url(url))
+    s = socket_by_protocol(protocol)
+
+    s.connect((host, port))
+    request = 'GET /{} HTTP/1.1\r\nHost: {}:{}\r\nConnection: close\r\n\r\n'.format(path, host, port)
+    print(request)
+    s.send(request.encode('utf-8'))
+    r = response_by_socket(s)
+    response = r.decode('utf-8')
+    status_code, headers, body = parsed_response(response)
+    if status_code in ['301', '302']:
+        url = headers['Location']
+        return get(url)
+    return status_code, headers, body
+
+
+def main():
+    url = 'http://movie.douban.com/top250'
+    # r = get(url)
+    # print(r)
+    # host = host_of_url(url)
+    # print(host)
+
+
+if __name__ == '__main__':
+
+    print(get('https://movie.douban.com/top250'))
+
