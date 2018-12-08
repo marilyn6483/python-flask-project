@@ -39,6 +39,7 @@ def parsed_url(url):
     port = port_dict[protocol]
 
     if ':' in host:
+        index = host.find(":")
         host = host[:index]
         port = int(host[index:])
 
