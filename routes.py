@@ -48,8 +48,6 @@ def route_login(request):
     return response.encode('utf-8')
 
 
-
-
 def route_static(request):
     filename = request.query.get('file', 'doge.gif')
     path = './static/' + filename
@@ -73,8 +71,9 @@ def route_register(request):
     header = 'HTTP/1.0 200 ok\r\nContent-Type: text/html\r\n\r\n'
     if request.method == 'POST':
         form = request.form()
-        user = User.new(form)
-        if user.validate_login():
+        user = User(form)
+        log.log('route_register: ', user)
+        if user.validate_register():
             user.save()
             result = '注册成功<br> <pre>{}</pre>'.format(User.all())
         else:
