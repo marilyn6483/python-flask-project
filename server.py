@@ -75,9 +75,9 @@ def run(host='127.0.0.1', port=2000):
             log.log("self.path: ", path)
 
             try:
-                path = request.split(" ")[1]
-                log.log('path: ', path)
-                response = response_for_path(path)
+                # path = request.split(" ")[1]
+                response = response_for_path(req)
+                log.log('response: ', response)
                 connection.sendall(response)
             except Exception as e:
                 log.log('error: ', e)
