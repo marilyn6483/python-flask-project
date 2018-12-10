@@ -9,9 +9,10 @@ def save(data, path):
 
 
 def load(path):
+    log.log("load ", path)
     with open(path, 'r', encoding='utf-8') as f:
         s = f.read()
-        log.log('load: ', s)
+        log.log('load: s', s)
         if s:
             return json.loads(s)
 
@@ -33,20 +34,27 @@ class Model:
     @classmethod
     def all(cls):
         path = cls.db_path()
+        log.log("all, path", path)
         models = load(path)
+        log.log(models)
 
+        # if models:
+        #     ms = [cls.new(m) for m in models]
+        #     log.log('ms: ', ms)
+        #     return ms
+        # return []
         if models:
-            ms = [cls.new(m) for m in models]
-            return ms
-        return []
+            return models
+        else:
+            return []
 
     def save(self):
         models = self.all()
-        models.append(self)
-        data = [m.__dict__ for m in models]
-        log.log('data: ', data)
+        models.append(self.__dict__)
+        # data = [m.__dict__ for m in models]
+        # log.log('data: ', data)
         path = self.db_path()
-        save(data, path)
+        save(models, path)
 
     def __repr__(self):
         classname = self.__class__.__name__
