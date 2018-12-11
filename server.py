@@ -10,6 +10,19 @@ class Request:
         self.method = 'GET'
         self.query = {}
         self.body = ''
+        self.headers = {}
+        self.cookies = {}
+
+    def add_cookies(self):
+        cookies = self.headers.get('Cookie', '')
+        kvs = cookies.split('; ')
+        for kv in kvs:
+            if '=' in kv:
+                k, v = kv.split('=')
+                self.cookies[k] = v
+
+    def add_headers(self):
+        pass
 
     def form(self):
         """
@@ -30,11 +43,22 @@ class Request:
         return args
 
     def parse_request(self, request):
+        # request header
         header = request.split("\r\n\r\n")[0]
+
+        # request body
         self.body = request.split("\r\n\r\n")[1]
+
+        # request elements
         headers = header.split("\r\n")
+        # first line of request
         self.method = headers[0].split(' ')[0]
         self.path = headers[0].split(' ')[1]
+
+        # extract header infos
+        for ele in headers[1:]:
+            k, v = ele.split(": ")
+            self.headers[k] = v
 
 
 def run(host='127.0.0.1', port=2000):
