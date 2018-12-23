@@ -32,7 +32,7 @@ def error(status_code=404):
 
 
 def route_login(request):
-    # headers = 'HTTP/1.1 200 ok\r\nContent-Type: text/html\r\n\r\n'
+    
     headers = {
         'Content-Type': 'text/html',
         # 'Set-Cookie': '',
