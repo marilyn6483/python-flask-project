@@ -1,5 +1,6 @@
 from utils import log
 from models import User
+import random
 
 
 def route_index(request):
@@ -42,8 +43,9 @@ def route_login(request):
         form = request.form()
         u = User.new(form)
         if u.validate_login():
-
-            headers['Set-Cookie'] = 'username={}'.format(u.username)
+            session_id = random_str()
+            session[session_id] = u.username
+            headers['Set-Cookie'] = 'username={}'.format(session_id)
             # headers = respone_with_headers(headers)
             result = "登录成功"
         else:
@@ -118,8 +120,18 @@ def respone_with_headers(headers):
 
 
 def current_user(request):
-    username = request.cookies.get('username', '【游客】')
+    session_id = request.cookies.get('username')
+    username = session.get(session_id, '【游客】')
     return username
+
+
+def random_str():
+    seed = 'qwertyuiopasdfghjklzxcvbnm'
+    s = ''
+    for i in range(16):
+        random_index = random.randint(0, len(seed) - 2)
+        s += seed[random_index]
+    return s
 
 
 route_dict = {
@@ -128,5 +140,7 @@ route_dict = {
     '/login': route_login,
     '/register': route_register,
     '/messages': route_message,
-
 }
+
+session = {}
+
