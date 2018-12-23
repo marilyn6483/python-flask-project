@@ -31,20 +31,31 @@ def error(status_code=404):
 
 
 def route_login(request):
-    headers = 'HTTP/1.1 200 ok\r\nContent-Type: text/html\r\n\r\n'
-
+    # headers = 'HTTP/1.1 200 ok\r\nContent-Type: text/html\r\n\r\n'
+    headers = {
+        'Content-Type': 'text/html',
+        # 'Set-Cookie': '',
+    }
+    log.log('request.cookies: ', request.cookies)
+    username = current_user(request)
     if request.method == 'POST':
         form = request.form()
         u = User.new(form)
         if u.validate_login():
-            result = "注册成功。"
+
+            headers['Set-Cookie'] = 'username={}'.format(u.username)
+            # headers = respone_with_headers(headers)
+            result = "登录成功"
         else:
-            result = "用户名或密码错误。"
+            result = "用户名或密码错误"
     else:
         result = ''
     body = template('login.html')
+
+    body = body.replace('{{username}}', username)
+
     body = body.replace('{{result}}', result)
-    response = headers + body
+    response = respone_with_headers(headers) + body
     return response.encode('utf-8')
 
 
@@ -83,6 +94,7 @@ def route_register(request):
     body = template('register.html')
     # log.log("router_register: ", body)
     body = body.replace('{{result}}', result)
+    # body = body.replace('{{username}}', u.username)
     # log.log("body + header", header)
     response = header + body
     return response.encode('utf-8')
@@ -96,6 +108,18 @@ def response_for_path(req):
 
     # 在返回值的时候调用函数
     return respone_function(req)
+
+
+def respone_with_headers(headers):
+    header = 'HTTP/1.1 200 OK\r\n'
+    header += ''.join(['{}: {}\r\n'.format(k, v) for k, v in headers.items()])
+    header = header + '\r\n'
+    return header
+
+
+def current_user(request):
+    username = request.cookies.get('username', '【游客】')
+    return username
 
 
 route_dict = {
