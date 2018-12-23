@@ -92,6 +92,7 @@ def run(host='127.0.0.1', port=2000):
             request = r.decode('utf-8')
             req = Request()
             req.parse_request(request)
+            req.add_cookies()
             path = req.path
             if req.body:
                 args = req.form()
@@ -99,7 +100,6 @@ def run(host='127.0.0.1', port=2000):
             log.log("self.path: ", path)
 
             try:
-                # path = request.split(" ")[1]
                 response = response_for_path(req)
                 log.log('response: ', response)
                 connection.sendall(response)
