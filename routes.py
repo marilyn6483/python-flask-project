@@ -46,7 +46,6 @@ def route_login(request):
             session_id = random_str()
             session[session_id] = u.username
             headers['Set-Cookie'] = 'username={}'.format(session_id)
-            # headers = respone_with_headers(headers)
             result = "登录成功"
         else:
             result = "用户名或密码错误"
