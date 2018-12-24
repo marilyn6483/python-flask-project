@@ -76,7 +76,20 @@ class User(Model):
         return '<{} name:{} passwd:{}>'.format(self.__class__.__name__, self.username, self.password)
 
     def validate_login(self):
-        return self.username == 'gua' and self.password == '123'
+        all_users = self.all()
+        if not all_users:
+            return False
+        else:
+            for user in all_users:
+                if self.username == user.get('username') and self.password == user.get('password'):
+                    return True
+            return False
 
     def validate_register(self):
         return len(self.username) > 2 and len(self.password) > 2
+
+
+class Message(Model):
+    def __init__(self, form):
+        self.author = form.get('author', '')
+        self.message = form.get('message', '')

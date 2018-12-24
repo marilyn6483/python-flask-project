@@ -1,6 +1,10 @@
 from utils import log
 from models import User
+from models import Message
 import random
+
+
+messages = []
 
 
 def route_index(request):
@@ -32,7 +36,7 @@ def error(status_code=404):
 
 
 def route_login(request):
-    
+
     headers = {
         'Content-Type': 'text/html',
         # 'Set-Cookie': '',
@@ -56,7 +60,8 @@ def route_login(request):
     body = body.replace('{{username}}', username)
 
     body = body.replace('{{result}}', result)
-    response = respone_with_headers(headers) + body
+    response = respone_with_headers(headers, 200) + body
+    log.log("response", response)
     return response.encode('utf-8')
 
 
@@ -70,8 +75,38 @@ def route_static(request):
         return header + body
 
 
-def route_message():
-    pass
+def redirect(url):
+    """
+    浏览器收到状态码302的时候，会在headers里面查找一个'Location'的字段并获取一个url，然后自动请求新的url
+    :param url:
+    :return:
+    """
+    headers = {
+        'Location': url,
+    }
+
+    response = respone_with_headers(headers, 302)
+    log.log("redirect ", response)
+    return response.encode('utf-8')
+
+
+def route_message(request):
+
+    username = current_user(request)
+    if username == '【游客】':
+        url = '/'
+        return redirect(url)
+    if request.method == 'POST':
+        form = request.form()
+        msg = Message.new(form)
+        messages.append(msg)
+    header = 'HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n'
+    # body = '<h1>消息版</h1>'
+    body = template('html_basic.html')
+    msgs = '<br>'.join([str(m) for m in messages])
+    body = body.replace('{{messages}}', msgs)
+    r = header + '\r\n' + body
+    return r.encode(encoding='utf-8')
 
 
 def route_register(request):
@@ -111,8 +146,8 @@ def response_for_path(req):
     return respone_function(req)
 
 
-def respone_with_headers(headers):
-    header = 'HTTP/1.1 200 OK\r\n'
+def respone_with_headers(headers, status_code):
+    header = 'HTTP/1.1 {} OK\r\n'.format(status_code)
     header += ''.join(['{}: {}\r\n'.format(k, v) for k, v in headers.items()])
     header = header + '\r\n'
     return header
